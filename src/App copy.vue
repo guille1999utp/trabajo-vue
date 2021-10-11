@@ -1,21 +1,51 @@
 <template>
   <div class="hello">
-   <Basic :todos="this.users" :ciudad="this.casosciudades" :departamento="this.casosdepartamentos" :dato="tabla" :mujer="this.casosgenero.mujer" :hombre="this.casosgenero.hombre" :m020="this.casosedades.m020" :m2040="this.casosedades.m2040"  :m40plus="this.casosedades.m40plus" ></Basic>
+  <div class="row justify-content-md-center col-md-12 hola">
+  
+    <div class="col-md-4">
+      <h3 >Generos covid 19</h3>
+  <br>
+  <br>
+    <pie-chart :data="chartDatagenero" :options="chartOptions"></pie-chart>
+    <h3>{{ casosgenero.hombre}} hombres</h3>
+    <h3>{{ casosgenero.mujer}} mujeres</h3>
+  </div>
+    <div class="col-md-4">
+      <h3 >Covid 19 por edad</h3>
+  <br>
+  <br>
+    <pie-chart :data="chartDataedad" :options="chartOptions"></pie-chart>
+    <h3>{{ casosedades.m020}} de 0 a 20 años</h3>
+    <h3>{{ casosedades.m2040}} de 20 a 40 años</h3>
+    <h3>{{ casosedades.m40plus}} de 40 años en adelante</h3>
+  </div>
+  
+    </div>
+  <div class="row justify-content-md-center tabla ">
+      <h3 >Ciudades con mas Casos covid 19</h3>
+  <br>
+  <br>
+    <div class="col-md-6">
+     <Basic :dato="tabla"></Basic>
+    </div>
+  </div>
+  
   </div>
 </template>
 
 <script>
+import PieChart from "./PieChart.js";
 import Basic from "./components/Line.vue";
 import axios from 'axios'
 import _ from 'lodash'
 export default {
   name: 'App',
    components: {
+    PieChart,
     Basic
   },
  async mounted(){
-
-await axios.get('https://www.datos.gov.co/resource/gt2j-8ykr.json').then((res)=>{ 
+     await axios.get('https://www.datos.gov.co/resource/gt2j-8ykr.json').then((res)=>{ 
         this.users = res.data;
      let h =  this.users.filter(hombre => hombre.sexo === 'M');
      this.casosgenero.hombre = h.length;
@@ -28,16 +58,15 @@ await axios.get('https://www.datos.gov.co/resource/gt2j-8ykr.json').then((res)=>
       let r40p = this.users.filter(m0 => m0.edad >40);
      this.casosedades.m40plus = r40p.length;
 
-      let ciudado = [],orden = [],ciu =[],ciucom=[];
+      let hola = [], orden = [];
         const departamentoindividual = [];
         let departamentorepetidos = [];
         let contador = 1;
         this.users.map(element => {
-         ciudado.push(element.ciudad_municipio_nom)
-         ciu.push(element.departamento_nom)
+         hola.push(element.ciudad_municipio_nom)
         });
          
-         orden = ciudado.sort();
+         orden = hola.sort();
         
 
        for(let i = 0; i < orden.length; i++){
@@ -49,25 +78,11 @@ await axios.get('https://www.datos.gov.co/resource/gt2j-8ykr.json').then((res)=>
            contador = 1;
          }
        }
-      orden = ciu.sort();
-        
-
-       for(let i = 0; i < orden.length; i++){
-         if(orden[i+1] === orden[i]){
-         contador++;
-         }else{
-           ciucom.push(orden[i]);
-           contador = 1;
-         }
-       }
-
-
-
        let ciudad = departamentoindividual.map((_,index) => ({'ciudad' : departamentoindividual[index] }));
        let covid19 = departamentorepetidos.map((_,index) => ({'covid19' : departamentorepetidos[index] }));
        let union = _.zip(ciudad, covid19)
       departamentorepetidos = departamentorepetidos.sort((a,b)=>(a>b)?-1:(a<b)?1:0);
-      console.log();
+      console.log(departamentorepetidos);
 
        let unir = union.map((oe)=>{
         return Object.assign(oe[0], oe[1])
@@ -76,13 +91,39 @@ await axios.get('https://www.datos.gov.co/resource/gt2j-8ykr.json').then((res)=>
        unir = _.orderBy(unir,['covid19'],['desc'])
        this.tabla = unir.slice(0,5);
         this.casosciudades = unir;
-      this.casosdepartamentos = departamentoindividual;
-      this.casosciudades = ciucom;
      }).catch(e => console.log(e));
-    
+   
 },
   data(){
   return{
+    chartOptions: {
+        hoverBorderWidth: 20
+      },
+      chartDatagenero: {
+        hoverBackgroundColor: "red",
+        hoverBorderWidth: 10,
+        labels: ["hombres", "mujeres"],
+        datasets: [
+          {
+            label: "Data One",
+            backgroundColor: ["#41B883", "#E46651"],
+            data: [520,480]
+          }
+        ]
+      },
+       chartDataedad: {
+        hoverBackgroundColor: "red",
+        hoverBorderWidth: 10,
+        labels: ["0-20", "20-40", "40+"],
+        datasets: [
+          {
+            label: "Data two",
+            backgroundColor: ["#41B883", "#E46651", "#6D6868"],
+            data: [61,448,491]
+          }
+        ]
+      },
+
     casosgenero:{
       hombre : 1,
       mujer :1,
@@ -93,7 +134,6 @@ await axios.get('https://www.datos.gov.co/resource/gt2j-8ykr.json').then((res)=>
       m40plus : 0,
     },
     casosciudades:[],
-    casosdepartamentos:[],
     tabla:{
       ciudades:[],
       datosciudades:[]
